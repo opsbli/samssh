@@ -4,3 +4,4 @@
 
 pub mod sidebar_tree;
 pub mod tab_bar;
+pub mod title_bar;

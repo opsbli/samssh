@@ -16,14 +16,20 @@ path = "src/main.rs"
 [dependencies]
 # GUI framework
 gpui = { git = "https://github.com/zed-industries/zed.git", package = "gpui" }
+gpui-component = { git = "https://github.com/longbridge/gpui-component" }
 
 # SSH protocol
 russh = "0.45"
-russh-sftp = "0.2"
+russh-sftp = "2"
 async-trait = "0.1"
+thiserror = "1"
+once_cell = "1"
+dirs-next = "2"
+tokio = { version = "1", features = ["sync"] }
+anyhow = "1"
 
-# Terminal emulation
-wezterm-term = "0.1"
+# Terminal emulation (tattoy fork of wezterm-term, published on crates.io)
+wezterm_term = { package = "tattoy-wezterm-term", version = "0.1.0-fork.5" }
 
 # Serialization
 serde = { version = "1", features = ["derive"] }

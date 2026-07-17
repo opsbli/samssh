@@ -4,7 +4,7 @@
 ---
 
 ## 架构
-Rust (edition 2021), gpui (GUI 框架), gpui-component (UI 组件库), wgpu (渲染引擎), russh (SSH 协议), wezterm-term (终端模拟), Windows DPAPI (加密), Windows 10/11 (DX12/Vulkan)
+Rust (edition 2021), gpui (GUI 框架), gpui-component (UI 组件库, [longbridge/gpui-component](https://github.com/longbridge/gpui-component)), wgpu (渲染引擎), russh (SSH 协议), wezterm-term (终端模拟), Windows DPAPI (加密), Windows 10/11 (DX12/Vulkan)
 
 ---
 

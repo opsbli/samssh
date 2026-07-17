@@ -1,7 +1,8 @@
 @startuml SamSSH Architecture
 !theme plain
 
-package "UI Layer (gpui-component)" {
+package "UI Layer (gpui-component)" as UI_LAYER {
+' Source: https://github.com/longbridge/gpui-component
   [TitleBar] as TITLE_BAR
   [SidebarTree] as SIDEBAR
   [TabBar] as TAB_BAR

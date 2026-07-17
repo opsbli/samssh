@@ -9,7 +9,7 @@
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                       界面层                                 │
-│  gpui-component 组件树                                       │
+│  [gpui-component](https://github.com/longbridge/gpui-component) 组件树                                       │
 │  TabBar │ Panel │ TerminalView │ Tree │ FileManager │ Menu   │
 │                       ▲ 状态订阅                              │
 │                       ▼                                      │

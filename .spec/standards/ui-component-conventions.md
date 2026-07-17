@@ -32,7 +32,7 @@ impl Render for MyComponent {
 | 全局状态 | `Entity<AppState>` 共享 | 跨组件状态共享 |
 | 后台消息 | 消息队列 + 事件订阅 | UI↔后台服务通信 |
 
-## 布局组件（gpui-component）
+## 布局组件（[gpui-component](https://github.com/longbridge/gpui-component)）
 
 | 组件 | 用途 |
 |------|------|

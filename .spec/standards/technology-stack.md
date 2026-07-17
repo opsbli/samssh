@@ -9,7 +9,7 @@
 | 层次 | 技术选型 | 用途 |
 |------|---------|------|
 | GUI 框架 | gpui | 原生 GUI 框架，响应式声明式 UI |
-| UI 组件库 | gpui-component | Tab, Tree, Panel, Dialog, Split 等组件 |
+| UI 组件库 | [gpui-component](https://github.com/longbridge/gpui-component) | Tab, Tree, Panel, Dialog, Split 等组件 |
 | 渲染引擎 | wgpu（DX12 / Vulkan） | GPU 渲染后端 |
 | SSH 协议 | russh | SSH 客户端协议实现 |
 | SFTP 协议 | russh-sftp | SFTP 文件传输协议 |

@@ -20,3 +20,10 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Agent/IDE tooling
+.reasonix/
+
+# Temporary build artifacts
+rust_out.exe
+rust_out.pdb

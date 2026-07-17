@@ -1,0 +1,72 @@
+@startuml SamSSH AppState
+!theme plain
+
+entity "AppState" as APP_STATE {
+  + sidebar_state: SidebarState
+  + tab_state: TabState
+  + session_state: HashMap<SessionId, SessionState>
+  + transfer_state: TransferState
+  + config: Arc<Config>
+  + theme_state: ThemeState
+  + window_state: WindowState
+}
+
+entity "SidebarState" as SIDEBAR {
+  + groups: Vec<GroupNode>
+  + expanded: HashSet<GroupId>
+  + selected: Option<HostId>
+  + quick_connect: String
+}
+
+entity "TabState" as TABS {
+  + tabs: Vec<TabItem>
+  + active: Option<TabId>
+  + tab_colors: HashMap<TabId, Color>
+}
+
+entity "SessionState" as SESSION {
+  + id: SessionId
+  + host_id: HostId
+  + kind: SessionKind (Terminal | SFTP)
+  + status: ConnectionStatus
+  + terminal: Option<wezterm_term::Terminal>
+  + sftp_client: Option<russh_sftp::client::SftpHandle>
+}
+
+entity "TransferState" as TRANSFER {
+  + tasks: Vec<TransferTask>
+  + window_open: bool
+}
+
+entity "Config" as CONFIG {
+  + profiles: Vec<Profile>
+  + settings: AppSettings
+  + color_scheme: Option<ColorScheme>
+}
+
+entity "ThemeState" as THEME {
+  + ui_theme: UiTheme
+  + term_themes: Vec<TermTheme>
+  + active_term_theme: String
+}
+
+entity "WindowState" as WIN {
+  + position: (i32, i32)
+  + size: (u32, u32)
+  + maximized: bool
+}
+
+APP_STATE --> SIDEBAR
+APP_STATE --> TABS
+APP_STATE --> SESSION : contains *
+APP_STATE --> TRANSFER
+APP_STATE --> CONFIG
+APP_STATE --> THEME
+APP_STATE --> WIN
+
+note right of APP_STATE : Entity<AppState>\ngpui 响应式状态根
+note right of SESSION : 运行中的 SSH 会话
+note right of TRANSFER : 文件传输队列
+note right of CONFIG : AppData 持久化
+
+@enduml

@@ -1,0 +1,104 @@
+' ============================================================
+' PlantUML 领域模型模板 — 通用骨架
+'
+' 使用说明：
+'   - {Module}    替换为模块名，如 InventoryCheck
+'   - {module}    替换为小写模块名，如 inventory_check
+'
+' 本模板使用 PlantUML 类图语法。
+' 参考: https://plantuml.com/class-diagram
+' ============================================================
+
+@startuml {Module}DomainModel
+' ============================================================
+' 1. 设置
+' ============================================================
+skinparam backgroundColor #FEFEFE
+skinparam class {
+  BorderColor #386FA4
+  FontSize 12
+  HeaderBackgroundColor #386FA4
+  HeaderFontColor #FFFFFF
+}
+skinparam arrow {
+  Color #386FA4
+  Thickness 1.5
+}
+
+' ============================================================
+' 2. 父类 / 基础实体
+' ============================================================
+class BaseEntity <<abstract>> {
+  + createBy: Long
+  + createTime: Date
+  + updateBy: Long
+  + updateTime: Date
+  + delFlag: String
+}
+note right of BaseEntity::delFlag
+  逻辑删除: "0"=正常, "1"=删除
+  所有业务实体继承此类
+end note
+
+class TenantEntity extends BaseEntity <<abstract>> {
+  + tenantId: String
+}
+
+' ============================================================
+' 3. 核心实体
+' ============================================================
+' --- 在此定义核心实体 ---
+' class {Module} {
+'   + id: Long
+'   + {fieldName}: {fieldType}
+'   + {fieldName}: {fieldType}
+'   ...
+' }
+' note right of {Module}::{fieldName}
+'   {字段说明}
+' end note
+
+' ============================================================
+' 4. 值对象 / 嵌入对象
+' ============================================================
+' --- 在此定义值对象 ---
+' class {ValueObject} {
+'   + {fieldName}: {fieldType}
+' }
+
+' ============================================================
+' 5. 实体关系
+' ============================================================
+' 关系符号:
+'   继承:     <|--        (B <|-- A : A继承B)
+'   组合:     *--         (A *-- B : B是A的组成部分)
+'   聚合:     o--         (A o-- B : B是A的聚合)
+'   一对多:   one "1" -- "N" many
+'   直接关联: -->         (A --> B : A引用B)
+'
+' --- 在此定义关系 ---
+' {EntityA} "1" -- "N" {EntityB} : 包含
+' {EntityA} --> {EntityB} : 引用
+
+' ============================================================
+' 6. 枚举
+' ============================================================
+' --- 在此定义枚举 ---
+' enum {StatusEnum} {
+'   VALUE_A
+'   VALUE_B
+' }
+
+' ============================================================
+' 7. 模块边界（可选）
+' ============================================================
+' rectangle "{Module} 边界" {
+'   {EntityA}
+'   {EntityB}
+' }
+' rectangle "{外部模块}" {
+'   {ExternalEntity}
+' }
+' {EntityA} --> {ExternalEntity} : 跨模块引用
+
+@enduml

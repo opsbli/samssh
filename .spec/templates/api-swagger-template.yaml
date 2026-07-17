@@ -1,0 +1,303 @@
+# ============================================================
+# OpenAPI 3.0 设计模板 — 通用骨架
+# 
+# 使用说明：
+#   - {module}      替换为业务模块名，如 inventory-check
+#   - {ModuleName}  替换为 PascalCase 模块名，如 InventoryCheck
+#   - {basePath}    替换为基础路径，如 /asset/inventory
+#   - {permPrefix}  替换为权限前缀，如 inventory
+#   
+# 本模板遵循 RuoYi 标准响应格式：R<T> 和 TableDataInfo<T>
+# ============================================================
+openapi: "3.0.3"
+info:
+  title: "{ModuleName} API"
+  description: "{模块中文名} — 接口规范"
+  version: "2.2.0"
+
+# ============================================================
+# 1. 服务器
+# ============================================================
+servers:
+  - url: http://localhost:8080
+    description: 本地开发
+
+# ============================================================
+# 2. 路径（端点定义）
+# ============================================================
+paths:
+  # ------------------------------
+  # 2.1 标准 CRUD
+  # ------------------------------
+
+  # GET 分页查询
+  /{basePath}/{module}/list:
+    get:
+      tags:
+        - "{ModuleName}"
+      summary: "分页查询{模块}列表"
+      operationId: "list{ModuleName}"
+      parameters:
+        - $ref: '#/components/parameters/pageNum'
+        - $ref: '#/components/parameters/pageSize'
+        # --- 在此添加查询参数 ---
+        # - name: {fieldName}
+        #   in: query
+        #   required: false
+        #   schema: { type: string }
+        #   description: {字段说明}
+      security:
+        - SaTokenAuth: ["{permPrefix}:{module}:list"]
+      responses:
+        "200":
+          description: "成功"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableDataInfo_{ModuleName}Vo'
+
+  # GET 查询详情
+  /{basePath}/{module}/{id}:
+    get:
+      tags:
+        - "{ModuleName}"
+      summary: "查询{模块}详情"
+      operationId: "get{ModuleName}ById"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: "{模块}ID"
+      security:
+        - SaTokenAuth: ["{permPrefix}:{module}:query"]
+      responses:
+        "200":
+          description: "成功"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/R_{ModuleName}Vo'
+
+  # POST 新增
+  /{basePath}/{module}:
+    post:
+      tags:
+        - "{ModuleName}"
+      summary: "新增{模块}"
+      operationId: "create{ModuleName}"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/{ModuleName}Bo'
+      security:
+        - SaTokenAuth: ["{permPrefix}:{module}:add"]
+      responses:
+        "200":
+          description: "成功"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/R'
+
+  # PUT 修改
+  /{basePath}/{module}:
+    put:
+      tags:
+        - "{ModuleName}"
+      summary: "修改{模块}"
+      operationId: "update{ModuleName}"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/{ModuleName}Bo'
+      security:
+        - SaTokenAuth: ["{permPrefix}:{module}:edit"]
+      responses:
+        "200":
+          description: "成功"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/R'
+
+  # DELETE 删除（支持批量）
+  /{basePath}/{module}/{ids}:
+    delete:
+      tags:
+        - "{ModuleName}"
+      summary: "删除{模块}（支持批量）"
+      operationId: "delete{ModuleName}ByIds"
+      parameters:
+        - name: ids
+          in: path
+          required: true
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+          description: "ID 列表，逗号分隔"
+      security:
+        - SaTokenAuth: ["{permPrefix}:{module}:remove"]
+      responses:
+        "200":
+          description: "成功"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/R'
+
+  # ------------------------------
+  # 2.2 业务动作端点（非 CRUD）
+  #   - 状态变更: POST /{basePath}/{module}/{id}/{action}
+  #   - 生成操作: POST /{basePath}/{module}/generate/{sourceId}
+  #   - 导出:     POST /{basePath}/{module}/export
+  # ------------------------------
+
+  # --- 在此添加业务端点 ---
+  # /{basePath}/{module}/export:
+  #   post:
+  #     tags: ["{ModuleName}"]
+  #     summary: "导出{模块}数据"
+  #     operationId: "export{ModuleName}"
+  #     security:
+  #       - SaTokenAuth: ["{permPrefix}:{module}:export"]
+  #     responses:
+  #       "200":
+  #         description: "Excel 文件下载"
+
+# ============================================================
+# 3. 组件（Schemas / Parameters / Security）
+# ============================================================
+components:
+
+  # ------------------------------
+  # 3.1 安全鉴权
+  # ------------------------------
+  securitySchemes:
+    SaTokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: "Sa-Token 认证，格式：Bearer {token}"
+
+  # ------------------------------
+  # 3.2 通用参数
+  # ------------------------------
+  parameters:
+    pageNum:
+      name: pageNum
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 1
+      description: "页码"
+    pageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 10
+        maximum: 500
+      description: "每页条数"
+
+  # ------------------------------
+  # 3.3 响应 Schema（RuoYi 标准）
+  # ------------------------------
+  schemas:
+
+    # ----- 通用响应 R<T> -----
+    R:
+      type: object
+      description: "通用响应包装（泛型，具体 data 类型在子类中定义）"
+      properties:
+        code:
+          type: integer
+          description: "状态码：200=成功"
+          example: 200
+        msg:
+          type: string
+          description: "提示信息"
+          example: "操作成功"
+        data:
+          type: object
+          description: "响应数据"
+      required:
+        - code
+        - msg
+
+    # ----- 分页响应 TableDataInfo<T> -----
+    TableDataInfo:
+      type: object
+      description: "分页数据包装（泛型，具体 rows 类型在子类中定义）"
+      properties:
+        code:
+          type: integer
+          example: 200
+        msg:
+          type: string
+          example: "查询成功"
+        total:
+          type: integer
+          description: "总记录数"
+          example: 100
+        rows:
+          type: array
+          description: "数据行列表"
+          items:
+            type: object
+      required:
+        - code
+        - msg
+        - total
+        - rows
+
+    # ========================================
+    # 3.4 具体 VO（响应对象）
+    # ========================================
+    # --- 在此定义具体 VO ---
+    # {ModuleName}Vo:
+    #   type: object
+    #   description: "{模块} 响应视图对象"
+    #   allOf:
+    #     - $ref: '#/components/schemas/R'
+    #     - type: object
+    #       properties:
+    #         data:
+    #           $ref: '#/components/schemas/{ModuleName}Vo_data'
+    #   properties:
+    #     id:
+    #       type: integer
+    #       format: int64
+    #       description: "ID"
+    #     {fieldName}:
+    #       type: {fieldType}
+    #       description: "{字段说明}"
+
+    # ========================================
+    # 3.5 具体 BO（请求对象）
+    # ========================================
+    # --- 在此定义具体 BO ---
+    # {ModuleName}Bo:
+    #   type: object
+    #   description: "{模块} 请求业务对象"
+    #   properties:
+    #     {fieldName}:
+    #       type: {fieldType}
+    #       description: "{字段说明}"
+
+# ============================================================
+# 4. 标签（端点分组）
+# ============================================================
+tags:
+  - name: "{ModuleName}"
+    description: "{模块中文名}"

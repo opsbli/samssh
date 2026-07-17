@@ -1,0 +1,1 @@
+//! SSH connection profile definition

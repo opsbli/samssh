@@ -1,6 +1,6 @@
 # SamSSH 模块依赖关系
 
-**Date**: 2026-07-17
+**Date**: 2026-07-20
 
 ---
 
@@ -12,16 +12,17 @@ src/
 ├── app/                     # UI 组件树
 │   ├── mod.rs               # AppState, 模块导出
 │   ├── components/          # 可复用 UI 组件
-│   │   ├── sidebar_tree.rs   # 侧边栏连接树 (R004)
-│   │   ├── tab_bar.rs        # 标签页 (R004)
+│   │   ├── sidebar_tree.rs   # 侧边栏连接树 (R004) + 右键菜单 (R010)
+│   │   ├── tab_bar.rs        # 标签页 (R004) — 未集成到 workspace
 │   │   ├── title_bar.rs      # 自定义标题栏 (R009)
-│   │   └── dialog.rs         # 通用对话框
+│   │   └── dialog.rs         # 新建/编辑连接对话框 (R010)
 │   ├── views/               # 视图层
-│   │   ├── terminal_view.rs  # 终端视图 (R002)
-│   │   ├── file_manager.rs   # SFTP 文件浏览器 (R003)
-│   │   ├── settings.rs       # 设置对话框 (R005)
-│   │   ├── transfer_mgr.rs   # 下载管理器窗口 (R007)
-│   │   └── theme_selector.rs # 主题选择器 (R006)
+│   │   ├── workspace.rs      # 主工作区 (R010) — 唯一已实现视图
+│   │   ├── terminal_view.rs  # 终端视图 (R002) — TODO
+│   │   ├── file_manager.rs   # SFTP 文件浏览器 (R003) — TODO
+│   │   ├── settings.rs       # 设置对话框 (R005) — TODO
+│   │   ├── transfer_mgr.rs   # 下载管理器窗口 (R007) — TODO
+│   │   └── theme_selector.rs # 主题选择器 (R006) — TODO
 │   └── state.rs             # AppState Entity 定义
 ├── ssh/                     # SSH 连接管理 (R001)
 │   ├── mod.rs
@@ -42,12 +43,12 @@ src/
 │   └── store.rs              # 持久化 (JSON + DPAPI)
 ├── theme/                   # 主题系统 (R006)
 │   ├── mod.rs
-│   ├── ui_theme.rs           # .thm 文件解析
-│   └── term_theme.rs         # TOML 配色加载
+│   ├── ui_theme.rs           # .thm 文件解析 — TODO
+│   └── term_theme.rs         # TOML 配色加载 — TODO
 ├── crypto/                  # 加密工具 (R008)
 │   ├── mod.rs
 │   └── dpapi.rs              # Windows DPAPI 封装
-├── tray/                    # 系统托盘 (P1)
+├── tray/                    # 系统托盘 — TODO
 ├── logger/                  # 日志
 └── model.rs                 # 核心数据模型
 ```
@@ -61,9 +62,9 @@ main.rs
         ├── sftp/ ────→ russh-sftp crate
         ├── terminal/ ─→ wezterm-term crate
         ├── config/ ───→ crypto/ ─→ windows-sys (DPAPI)
-        ├── theme/
+        ├── theme/ (TODO)
         ├── crypto/
-        ├── tray/
+        ├── tray/ (TODO)
         └── logger/
 ```
 

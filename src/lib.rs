@@ -5,6 +5,7 @@ pub mod app;
 pub mod config;
 pub mod crypto;
 pub mod logger;
+pub mod session;
 pub mod sftp;
 pub mod ssh;
 pub mod terminal;

@@ -2,13 +2,10 @@
 !theme plain
 
 entity "AppState" as APP_STATE {
-  + sidebar_state: SidebarState
-  + tab_state: TabState
-  + session_state: HashMap<SessionId, SessionState>
-  + transfer_state: TransferState
+  + sidebar: SidebarState
+  + tabs: TabState
+  + sessions: HashMap<SessionId, SessionState>
   + config: Arc<Config>
-  + theme_state: ThemeState
-  + window_state: WindowState
 }
 
 entity "SidebarState" as SIDEBAR {
@@ -18,10 +15,25 @@ entity "SidebarState" as SIDEBAR {
   + quick_connect: String
 }
 
+entity "GroupNode" as GROUP {
+  + id: GroupId
+  + name: String
+  + hosts: Vec<HostId>
+  + expanded: bool
+}
+
 entity "TabState" as TABS {
   + tabs: Vec<TabItem>
   + active: Option<TabId>
-  + tab_colors: HashMap<TabId, Color>
+  + next_id: TabId
+}
+
+entity "TabItem" as TAB_ITEM {
+  + id: TabId
+  + title: String
+  + kind: SessionKind (Terminal | SFTP)
+  + host_id: HostId
+  + session_id: Option<SessionId>
 }
 
 entity "SessionState" as SESSION {
@@ -29,44 +41,55 @@ entity "SessionState" as SESSION {
   + host_id: HostId
   + kind: SessionKind (Terminal | SFTP)
   + status: ConnectionStatus
-  + terminal: Option<wezterm_term::Terminal>
-  + sftp_client: Option<russh_sftp::client::SftpHandle>
-}
-
-entity "TransferState" as TRANSFER {
-  + tasks: Vec<TransferTask>
-  + window_open: bool
 }
 
 entity "Config" as CONFIG {
   + profiles: Vec<Profile>
   + settings: AppSettings
-  + color_scheme: Option<ColorScheme>
+  + window_x/y/width/height: Option
+  + window_maximized: bool
 }
 
-entity "ThemeState" as THEME {
-  + ui_theme: UiTheme
-  + term_themes: Vec<TermTheme>
-  + active_term_theme: String
+entity "Profile" as PROFILE {
+  + id, name, host, port (22)
+  + username, auth_method
+  + group: Option
+  + sort_order
+  + password_encrypted: Option
 }
 
-entity "WindowState" as WIN {
-  + position: (i32, i32)
-  + size: (u32, u32)
-  + maximized: bool
+entity "Workspace" as WORKSPACE {
+  + app_state: Entity<AppState>
+  + sidebar_tree: Entity<SidebarTree>
+}
+
+entity "SidebarTree" as SIDEBAR_TREE {
+  + tree_state: Entity<TreeState>
+  + app_state: Entity<AppState>
+  右键菜单: Delete Host / Delete Group
+}
+
+entity "ProfileDialog" as DIALOG {
+  trigger: "+" 按钮 (sidebar 顶部)
+  fields: Name / Host / Port / Username / Group
+  on_save: ConfigStore.save() + SidebarState.from_profiles()
 }
 
 APP_STATE --> SIDEBAR
 APP_STATE --> TABS
 APP_STATE --> SESSION : contains *
-APP_STATE --> TRANSFER
 APP_STATE --> CONFIG
-APP_STATE --> THEME
-APP_STATE --> WIN
+SIDEBAR --> GROUP : contains *
+TABS --> TAB_ITEM : contains *
+CONFIG --> PROFILE : contains *
 
-note right of APP_STATE : Entity<AppState>\ngpui 响应式状态根
-note right of SESSION : 运行中的 SSH 会话
-note right of TRANSFER : 文件传输队列
-note right of CONFIG : AppData 持久化
+WORKSPACE --> APP_STATE : holds Entity
+WORKSPACE --> SIDEBAR_TREE : renders
+WORKSPACE --> DIALOG : "+" button trigger
+
+note right of APP_STATE : Entity<AppState>\n实际字段: sidebar, tabs, sessions, config
+note right of WORKSPACE : 主视图，持有 AppState 引用
+note right of DIALOG : R010 — 新建连接\n保存后自动刷新侧边栏
+note right of SIDEBAR_TREE : R004 — 树组件\n已集成右键菜单
 
 @enduml

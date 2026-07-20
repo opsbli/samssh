@@ -1,6 +1,6 @@
 # SamSSH 全链路追溯矩阵
 
-**Date**: 2026-07-17
+**Date**: 2026-07-20
 
 > Evidence → Question → Decision → Requirement → Design → Code → Test
 
@@ -58,15 +58,25 @@
 | R | R001~R009 | 9 个 Requirement 分域覆盖 |
 | Design | 三件套 | 所有设计覆盖 P0 需求 |
 
+### E006 — 当前实现状态（新增）
+
+| 阶段 | 引用 | 说明 |
+|------|------|------|
+| E | E006 | 实现状态追踪：代码与设计文档差距分析 |
+| Q | (无) | 直接观察，无需盘问 |
+| D | D006 | 新增 R010 映射新建连接对话框 |
+| R | R010 | 新建/编辑连接对话框需求 |
+| Design | app_state.puml, module_deps.md, architecture.puml | 三件套已更新 |
+
 ---
 
 ## 矩阵统计
 
 | 指标 | 值 |
 |------|-----|
-| Evidence 记录 | 5 (E001~E005) |
-| Decision 记录 | 4 (D001~D004) |
-| Requirement 记录 | 9 (R001~R009) |
-| Design 三件套 | 3 (architecture.puml, app_state.puml, module_deps.md) |
-| 完整 6 层链路 (E→Q→D→R→Design) | 3 条 (E002, E003, E005) |
-| 缺失层 | Code（待实现）、Test（待实现） |
+| Evidence 记录 | 6 (E001~E006) |
+| Decision 记录 | 5 (D001~D005) + D006 |
+| Requirement 记录 | 10 (R001~R010) |
+| Design 三件套 | 3 (已全部更新至 2026-07-20) |
+| Code | SSH/SFTP/终端/配置/加密 已实现；UI 组件部分集成 |
+| Test | 61 个测试通过 |

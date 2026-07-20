@@ -3,6 +3,8 @@
 //! Sidebar, quick connect, tab bar, title bar, dialogs, etc.
 
 pub mod dialog;
+pub mod file_browser;
+pub mod file_manager_view;
 pub mod key_verify;
 pub mod quick_connect;
 pub mod sidebar_tree;

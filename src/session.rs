@@ -48,6 +48,87 @@ pub fn spawn_profile_connection(
     spawn_ssh_connection(cx, app_state, host, port, username, profile_id);
 }
 
+/// Spawn an SFTP file browser tab for a connected session.
+///
+/// Creates an SFTP tab that shares the same host_id as the source SSH session.
+/// The SFTP channel will be established on top of the existing SSH connection.
+pub fn spawn_sftp_tab(
+    cx: &mut App,
+    app_state: WeakEntity<AppState>,
+    host: String,
+    port: u16,
+    username: &str,
+    host_id: String,
+) {
+    app_state.update(cx, |state, _| {
+        let label = format!("SFTP - {}:{}", host, port);
+        let tid = state.tabs.add_tab(label, SessionKind::SFTP, host_id.clone());
+        let sid = next_session_id();
+
+        state.sessions.insert(
+            sid,
+            SessionState {
+                id: sid,
+                host_id: host_id.clone(),
+                kind: SessionKind::SFTP,
+                status: ConnectionStatus::Connected,
+            },
+        );
+        state.tabs.set_session(tid, sid);
+
+        // Initialize file manager state for this session
+        state.sftp_state.insert(
+            sid,
+            crate::app::state::FileManagerState::new("/".to_string()),
+        );
+
+        tracing::info!("SFTP tab created: session={}, tab={}, host={}", sid, tid, host_id);
+    });
+}
+
+/// Create an SFTP tab from an active terminal session.
+///
+/// Called when user right-clicks a terminal tab or connection and selects "Open SFTP".
+pub fn spawn_sftp_from_session(
+    cx: &mut App,
+    app_state: WeakEntity<AppState>,
+    session_id: u64,
+) {
+    app_state.update(cx, |state, _| {
+        // Find the source session
+        if let Some(source) = state.sessions.get(&session_id) {
+            let label = format!("SFTP - {}", source.host_id);
+            let tid = state.tabs.add_tab(label, SessionKind::SFTP, source.host_id.clone());
+            let sid = next_session_id();
+
+            state.sessions.insert(
+                sid,
+                SessionState {
+                    id: sid,
+                    host_id: source.host_id.clone(),
+                    kind: SessionKind::SFTP,
+                    status: ConnectionStatus::Connected,
+                },
+            );
+            state.tabs.set_session(tid, sid);
+
+            // Initialize file manager state
+            state.sftp_state.insert(
+                sid,
+                crate::app::state::FileManagerState::new("/".to_string()),
+            );
+
+            tracing::info!(
+                "SFTP tab from session: source_session={}, new_session={}",
+                session_id,
+                sid
+            );
+        } else {
+            tracing::warn!("Cannot create SFTP tab: source session {} not found", session_id);
+        }
+    });
+}
+
 // ── Internal helpers ──
 
 fn create_tab(

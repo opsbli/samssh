@@ -1,6 +1,6 @@
 # SamSSH 模块依赖关系
 
-**Date**: 2026-07-20
+**Date**: 2026-07-21
 
 ---
 
@@ -13,17 +13,19 @@ src/
 │   ├── mod.rs               # AppState, 模块导出
 │   ├── components/          # 可复用 UI 组件
 │   │   ├── sidebar_tree.rs   # 侧边栏连接树 (R004) + 右键菜单 (R010)
-│   │   ├── tab_bar.rs        # 标签页 (R004) — 未集成到 workspace
+│   │   ├── tab_bar.rs        # 标签页 (R004)
 │   │   ├── title_bar.rs      # 自定义标题栏 (R009)
-│   │   └── dialog.rs         # 新建/编辑连接对话框 (R010)
+│   │   ├── dialog.rs         # 新建/编辑连接对话框 (R010)
+│   │   ├── file_browser.rs   # 通用文件浏览器组件 (R003) — PathBar + TableView
+│   │   └── file_manager_view.rs # 双面板 SFTP 文件浏览器 (R003)
 │   ├── views/               # 视图层
-│   │   ├── workspace.rs      # 主工作区 (R010) — 唯一已实现视图
-│   │   ├── terminal_view.rs  # 终端视图 (R002) — TODO
-│   │   ├── file_manager.rs   # SFTP 文件浏览器 (R003) — TODO
+│   │   ├── workspace.rs      # 主工作区 (R010) — 按 Tab kind 切换视图
+│   │   ├── terminal_view.rs  # 终端视图 (R002)
+│   │   ├── file_manager.rs   # (已移至 components/file_manager_view.rs)
 │   │   ├── settings.rs       # 设置对话框 (R005) — TODO
 │   │   ├── transfer_mgr.rs   # 下载管理器窗口 (R007) — TODO
 │   │   └── theme_selector.rs # 主题选择器 (R006) — TODO
-│   └── state.rs             # AppState Entity 定义
+│   └── state.rs             # AppState Entity 定义 + FileManagerState
 ├── ssh/                     # SSH 连接管理 (R001)
 │   ├── mod.rs
 │   ├── client.rs             # russh 客户端封装
@@ -74,6 +76,35 @@ main.rs
 2. **ssh/ 和 sftp/ 是纯异步层** — 通过消息队列与 UI 通信
 3. **config/ 是同步层** — 读写 JSON，DPAPI 加密通过 crypto/
 4. **终端渲染由 wezterm-term 输出位图** — 由 terminal_view.rs 渲染到 gpui 画布
+5. **FileBrowser 组件是纯 UI 组件** — 不直接依赖外部 crate，数据由父层注入
+6. **本地面板使用 tokio::fs 异步读取** — 不直接使用 std::fs（保持与 gpui 异步兼容）
+
+---
+
+## 新增/修改模块
+
+### file_browser.rs (新增)
+**位置**: `src/app/components/file_browser.rs`
+**职责**: 通用文件浏览器组件（PathBar + TableView + Selection）
+**依赖**: `gpui`, `gpui-component`, `model.rs` (FileEntry)
+**复用**: 被 FileManagerView 实例化为 local panel 和 remote panel
+**事件**: 导航事件（enter_dir/go_up/go_to_path）、选择事件（select/deselect/hover）
+
+### file_manager_view.rs (新增)
+**位置**: `src/app/components/file_manager_view.rs`
+**职责**: 双面板 SFTP 文件浏览器主视图（LocalPanel + Toolbar + RemotePanel）
+**依赖**: `file_browser.rs` (FileBrowser), `sftp/client.rs` (SftpClient), `app/state.rs` (FileManagerState), `rfd` (file dialogs)
+**集成**: 由 workspace.rs 在 TabKind::SFTP 时渲染
+
+### session.rs (修改)
+**新增功能**:
+- `spawn_sftp_session()` — 从已有 SSH 连接创建 SFTP 通道
+- 复用 `do_connect()` 中的 SSH 连接句柄
+
+### workspace.rs (修改)
+**新增功能**:
+- 在 TabKind::SFTP 时渲染 FileManagerView 代替 TerminalView
+- 持有 `Entity<FileManagerView>` 实体
 
 ---
 
@@ -241,6 +272,51 @@ save():
 load():
   读取文件 → Base64 decode → DPAPI decrypt → serde_json → Config
   → 解密失败时加载不包含凭据的纯文本配置
+```
+
+---
+
+## SFTP 双面板文件浏览器设计
+
+### FileManagerView 组件树
+
+```
+FileManagerView (Entity<FileManagerView>)
+├── Left Panel (FileBrowser — Local)
+│   ├── PathBar: [↻] [↑] [path_input]
+│   └── TableView: [Name | Size | Modified | Permissions]
+│       └── Rows: FileEntry[]
+├── Toolbar (居中垂直排列)
+│   ├── [Upload →]   — rfd::FileDialog → upload()
+│   ├── [← Download] — rfd::SaveDialog → download()
+│   ├── [New Dir]    — 内联输入 → create_dir()
+│   ├── [Rename]     — 内联编辑 → rename()
+│   ├── [Delete]     — 确认框 → delete_recursive()
+│   └── [↻ Refresh]  — 刷新当前面板
+└── Right Panel (FileBrowser — Remote)
+    ├── PathBar: [↻] [↑] [path_input]
+    └── TableView: [Name | Size | Modified | Permissions]
+        └── Rows: FileEntry[]
+```
+
+### 数据流
+
+```
+本地导航:
+  User双击目录 → Workspace → FileManagerView.update()
+    → tokio::spawn(list_local_dir(path)) → entries → state.update_local_entries()
+
+远程导航:
+  User双击目录 → Workspace → FileManagerView.update()
+    → tokio::spawn(sftp_client.list_dir(path)) → entries → state.update_remote_entries()
+
+上传:
+  User点击 Upload → rfd::open_file() → 选择本地文件
+    → tokio::spawn(upload(client, local, remote_path)) → transfer.TransferTask
+
+下载:
+  User点击 Download → rfd::save_file() → 选择本地路径
+    → tokio::spawn(download(client, remote, local_path)) → transfer.TransferTask
 ```
 
 ---

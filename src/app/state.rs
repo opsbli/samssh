@@ -228,6 +228,87 @@ pub struct SessionState {
     pub status: ConnectionStatus,
 }
 
+// ── File Browser State ──
+
+/// A file/directory entry for file browser display.
+#[derive(Debug, Clone)]
+pub struct FileEntry {
+    pub name: String,
+    pub is_dir: bool,
+    pub size: u64,
+    pub modified: String,
+    pub permissions: String,
+}
+
+/// State for a single file browser panel (used by both local and remote).
+#[derive(Debug, Clone)]
+pub struct FileBrowserState {
+    pub current_path: String,
+    pub entries: Vec<FileEntry>,
+    pub loading: bool,
+    pub error: Option<String>,
+    pub selected: Option<usize>,
+}
+
+impl FileBrowserState {
+    pub fn new(path: String) -> Self {
+        Self {
+            current_path: path,
+            entries: Vec::new(),
+            loading: false,
+            error: None,
+            selected: None,
+        }
+    }
+
+    /// Update entries and clear loading/error state.
+    pub fn set_entries(&mut self, entries: Vec<FileEntry>) {
+        self.entries = entries;
+        self.loading = false;
+        self.error = None;
+    }
+
+    /// Set error state.
+    pub fn set_error(&mut self, err: String) {
+        self.loading = false;
+        self.error = Some(err);
+    }
+}
+
+/// Current file operation being performed.
+#[derive(Debug, Clone)]
+pub enum FileOperation {
+    None,
+    Deleting { path: String },
+    Renaming { old_path: String, new_name: String },
+    CreatingDir { parent_path: String },
+    Uploading { local_path: String, remote_path: String },
+    Downloading { remote_path: String, local_path: String },
+}
+
+/// State for the SFTP dual-panel file manager, keyed by session ID.
+#[derive(Debug, Clone)]
+pub struct FileManagerState {
+    pub local: FileBrowserState,
+    pub remote: FileBrowserState,
+    pub operation: FileOperation,
+}
+
+impl FileManagerState {
+    pub fn new(remote_path: String) -> Self {
+        // Local initial path: user's home directory or Documents
+        let local_path = dirs_next::home_dir()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| "C:\\".to_string());
+
+        Self {
+            local: FileBrowserState::new(local_path),
+            remote: FileBrowserState::new(remote_path),
+            operation: FileOperation::None,
+        }
+    }
+}
+
 // ── AppState (top-level) ──
 
 /// Top-level application state root entity.
@@ -235,6 +316,7 @@ pub struct AppState {
     pub sidebar: SidebarState,
     pub tabs: TabState,
     pub sessions: HashMap<SessionId, SessionState>,
+    pub sftp_state: HashMap<SessionId, FileManagerState>,
     pub config: Arc<crate::config::store::Config>,
 }
 
@@ -245,6 +327,7 @@ impl AppState {
             sidebar,
             tabs: TabState::new(),
             sessions: HashMap::new(),
+            sftp_state: HashMap::new(),
             config: Arc::new(config),
         }
     }
@@ -374,5 +457,78 @@ mod tests {
 
         state.update_session_status(1, ConnectionStatus::Connected);
         assert_eq!(state.sessions[&1].status, ConnectionStatus::Connected);
+    }
+
+    // ── File Browser State Tests ──
+
+    #[test]
+    fn test_file_browser_state_new() {
+        let state = FileBrowserState::new("/home/user".to_string());
+        assert_eq!(state.current_path, "/home/user");
+        assert!(state.entries.is_empty());
+        assert!(!state.loading);
+        assert!(state.error.is_none());
+        assert!(state.selected.is_none());
+    }
+
+    #[test]
+    fn test_file_browser_state_set_entries() {
+        let mut state = FileBrowserState::new("/".to_string());
+        state.loading = true;
+        let entries = vec![
+            FileEntry {
+                name: "file.txt".into(),
+                is_dir: false,
+                size: 100,
+                modified: "12:00".into(),
+                permissions: "-rw-------".into(),
+            },
+            FileEntry {
+                name: "docs".into(),
+                is_dir: true,
+                size: 0,
+                modified: "10:00".into(),
+                permissions: "drwx------".into(),
+            },
+        ];
+        state.set_entries(entries.clone());
+        assert_eq!(state.entries.len(), 2);
+        assert!(!state.loading);
+        assert!(state.error.is_none());
+        assert_eq!(state.entries[0].name, "file.txt");
+        assert!(state.entries[1].is_dir);
+    }
+
+    #[test]
+    fn test_file_browser_state_error() {
+        let mut state = FileBrowserState::new("/".to_string());
+        state.loading = true;
+        state.set_error("Permission denied".to_string());
+        assert!(!state.loading);
+        assert_eq!(state.error, Some("Permission denied".to_string()));
+    }
+
+    #[test]
+    fn test_file_entry_creation() {
+        let entry = FileEntry {
+            name: "test.bin".into(),
+            is_dir: false,
+            size: 2048,
+            modified: "14:30".into(),
+            permissions: "-rw-r--r--".into(),
+        };
+        assert_eq!(entry.name, "test.bin");
+        assert!(!entry.is_dir);
+        assert_eq!(entry.size, 2048);
+    }
+
+    #[test]
+    fn test_file_manager_state_new() {
+        let state = FileManagerState::new("/remote/path".to_string());
+        assert_eq!(state.remote.current_path, "/remote/path");
+        assert_eq!(state.local.current_path, dirs_next::home_dir()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| "C:\\".to_string()));
+        assert!(matches!(state.operation, FileOperation::None));
     }
 }

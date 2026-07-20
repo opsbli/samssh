@@ -124,11 +124,26 @@ impl Render for SidebarTree {
                                 }),
                         );
                         let id2 = id.clone();
+                        let as_sftp = as_.clone();
                         let m = m.item(
                             PopupMenuItem::new("Connect SFTP")
                                 .icon(gpui_component::IconName::Folder)
-                                .on_click(move |_, _, _| {
-                                    tracing::info!("SFTP to: {}", id2);
+                                .on_click(move |_, _, cx| {
+                                    let weak = as_sftp.downgrade();
+                                    if let Some(profile) = weak.upgrade().and_then(|s| {
+                                        s.read(cx).config.profiles.iter()
+                                            .find(|p| p.id == id2)
+                                            .cloned()
+                                    }) {
+                                        crate::session::spawn_sftp_tab(
+                                            cx,
+                                            weak,
+                                            profile.host,
+                                            profile.port,
+                                            &profile.username,
+                                            profile.id,
+                                        );
+                                    }
                                 }),
                         );
                         let id3 = id.clone();

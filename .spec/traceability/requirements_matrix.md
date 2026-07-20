@@ -1,6 +1,6 @@
 # SamSSH 全链路追溯矩阵
 
-**Date**: 2026-07-20
+**Date**: 2026-07-21
 
 > Evidence → Question → Decision → Requirement → Design → Code → Test
 
@@ -58,7 +58,7 @@
 | R | R001~R009 | 9 个 Requirement 分域覆盖 |
 | Design | 三件套 | 所有设计覆盖 P0 需求 |
 
-### E006 — 当前实现状态（新增）
+### E006 — 当前实现状态（2026-07-20）
 
 | 阶段 | 引用 | 说明 |
 |------|------|------|
@@ -68,15 +68,25 @@
 | R | R010 | 新建/编辑连接对话框需求 |
 | Design | app_state.puml, module_deps.md, architecture.puml | 三件套已更新 |
 
+### E007 — FileManagerView 设计决策（新增 2026-07-21）
+
+| 阶段 | 引用 | 说明 |
+|------|------|------|
+| E | E007 | 用户 grill 确认 5 项 FileManagerView 设计决策 |
+| Q | Q001~Q005 | 布局/表格/按钮/SFTP 复用/本地面板范围 |
+| D | D007~D011 | 5 项决策覆盖全部设计点 |
+| R | R003 | SFTP 文件管理（已更新 BR-201~BR-210） |
+| Design | architecture.puml, app_state.puml, module_deps.md | 全部已更新至 2026-07-21 |
+
 ---
 
 ## 矩阵统计
 
 | 指标 | 值 |
 |------|-----|
-| Evidence 记录 | 6 (E001~E006) |
-| Decision 记录 | 5 (D001~D005) + D006 |
+| Evidence 记录 | 7 (E001~E007) |
+| Decision 记录 | 11 (D001~D011) |
 | Requirement 记录 | 10 (R001~R010) |
-| Design 三件套 | 3 (已全部更新至 2026-07-20) |
-| Code | SSH/SFTP/终端/配置/加密 已实现；UI 组件部分集成 |
-| Test | 61 个测试通过 |
+| Design 三件套 | 3 (已全部更新至 2026-07-21) |
+| Code | SSH/SFTP/终端/配置/加密 + UI 组件 + **FileManagerView 双面板** 已实现 |
+| Test | **66 个测试通过**（新增 5 个 FileManager 状态测试） |

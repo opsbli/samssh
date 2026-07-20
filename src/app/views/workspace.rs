@@ -17,6 +17,7 @@ use crate::app::components::{
     title_bar,
 };
 use crate::app::views::terminal_view::TerminalView;
+use crate::app::components::file_manager_view::FileManagerView;
 
 /// Main workspace view.
 pub struct Workspace {
@@ -24,17 +25,20 @@ pub struct Workspace {
     quick_connect: QuickConnect,
     sidebar_tree: Entity<SidebarTree>,
     terminal: Entity<TerminalView>,
+    file_manager: Entity<FileManagerView>,
 }
 
 impl Workspace {
     pub fn new(app_state: Entity<AppState>, cx: &mut Context<Self>) -> Self {
         let sidebar_tree = cx.new(|cx| SidebarTree::new(app_state.clone(), cx));
         let terminal = cx.new(|_| TerminalView::new(24, 80));
+        let file_manager = cx.new(|cx| FileManagerView::new(app_state.clone(), cx));
         Self {
             app_state,
             quick_connect: QuickConnect::new(),
             sidebar_tree,
             terminal,
+            file_manager,
         }
     }
 
@@ -187,10 +191,29 @@ impl Render for Workspace {
                                             .child("Connect to a server to get started")
                                             .into_any_element()
                                     } else {
-                                        self.terminal.clone().into_any_element()
+                                        render_content_panel(
+                                            &tabs,
+                                            &self.terminal,
+                                            &self.file_manager,
+                                            cx,
+                                        )
                                     }),
                             ),
                     ),
             )
+    }
+}
+
+/// Render the content area based on active tab kind.
+fn render_content_panel(
+    tabs: &crate::app::state::TabState,
+    terminal: &Entity<TerminalView>,
+    file_manager: &Entity<FileManagerView>,
+    _cx: &mut Context<'_, Workspace>,
+) -> gpui::AnyElement {
+    let active_tab = tabs.active_tab();
+    match active_tab.map(|t| t.kind) {
+        Some(SessionKind::SFTP) => file_manager.clone().into_any_element(),
+        _ => terminal.clone().into_any_element(),
     }
 }

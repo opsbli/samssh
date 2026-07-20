@@ -6,6 +6,7 @@ entity "AppState" as APP_STATE {
   + tabs: TabState
   + sessions: HashMap<SessionId, SessionState>
   + config: Arc<Config>
+  + sftp_state: HashMap<SessionId, FileManagerState>
 }
 
 entity "SidebarState" as SIDEBAR {
@@ -61,12 +62,42 @@ entity "Profile" as PROFILE {
 entity "Workspace" as WORKSPACE {
   + app_state: Entity<AppState>
   + sidebar_tree: Entity<SidebarTree>
+  + terminal: Entity<TerminalView>
+  + file_manager: Entity<FileManagerView>
+}
+
+entity "FileManagerState" as FM_STATE {
+  + local: FileBrowserState
+  + remote: FileBrowserState
+  + operation: Option<FileOperation>
+}
+
+entity "FileBrowserState" as FB_STATE {
+  + current_path: String
+  + entries: Vec<FileEntry>
+  + loading: bool
+  + error: Option<String>
+  + selected: Option<usize>
+}
+
+entity "FileEntry" as FENTRY {
+  + name: String
+  + is_dir: bool
+  + size: u64
+  + modified: String
+  + permissions: String
+}
+
+entity "FileOperation" as FOP {
+  kind: Upload | Download | Delete | Rename | Mkdir
+  status: InProgress | Completed | Failed
+  message: Option<String>
 }
 
 entity "SidebarTree" as SIDEBAR_TREE {
   + tree_state: Entity<TreeState>
   + app_state: Entity<AppState>
-  右键菜单: Delete Host / Delete Group
+  右键菜单: Delete Host / Delete Group / Open SFTP
 }
 
 entity "ProfileDialog" as DIALOG {
@@ -79,17 +110,26 @@ APP_STATE --> SIDEBAR
 APP_STATE --> TABS
 APP_STATE --> SESSION : contains *
 APP_STATE --> CONFIG
+APP_STATE --> FM_STATE : contains * (per session)
 SIDEBAR --> GROUP : contains *
 TABS --> TAB_ITEM : contains *
 CONFIG --> PROFILE : contains *
+
+FM_STATE --> FB_STATE : local
+FM_STATE --> FB_STATE : remote
+FM_STATE --> FOP : current operation
+FB_STATE --> FENTRY : contains *
 
 WORKSPACE --> APP_STATE : holds Entity
 WORKSPACE --> SIDEBAR_TREE : renders
 WORKSPACE --> DIALOG : "+" button trigger
 
-note right of APP_STATE : Entity<AppState>\n实际字段: sidebar, tabs, sessions, config
-note right of WORKSPACE : 主视图，持有 AppState 引用
+note right of APP_STATE : Entity<AppState>\n新增 sftp_state 字段
+note right of WORKSPACE : 主视图\n新增 file_manager 实体
 note right of DIALOG : R010 — 新建连接\n保存后自动刷新侧边栏
-note right of SIDEBAR_TREE : R004 — 树组件\n已集成右键菜单
+note right of SIDEBAR_TREE : R004 — 树组件\n已集成右键菜单\n新增"Open SFTP"菜单项
+note right of FM_STATE : R003 — SFTP 双面板状态\n每个 SFTP 会话独立
+note right of FB_STATE : 通用文件浏览器状态\n本地/远程面板共用
+note right of FOP : 当前文件操作状态\n用于 UI 反馈
 
 @enduml

@@ -7,8 +7,9 @@ package "UI Layer (gpui-component)" as UI_LAYER {
   [SidebarTree] as SIDEBAR
   [TabBar] as TAB_BAR
   [ProfileDialog] as DIALOG
-  [TerminalView] as TERM_VIEW — TODO
-  [FileManagerView] as FILE_VIEW — TODO
+  [TerminalView] as TERM_VIEW
+  [FileManagerView] as FILE_VIEW
+  [FileBrowser] as FILE_BROWSER
   [SettingsDialog] as SETTINGS — TODO
   [ThemeSelector] as THEME_SEL — TODO
 }
@@ -17,6 +18,7 @@ package "State Management (Entity<AppState>)" {
   [AppState] as APP_STATE
   [ConfigStore] as CONFIG_STORE
   [Workspace] as WORKSPACE
+  [FileManagerState] as FM_STATE
 }
 
 package "Service Layer" {
@@ -24,6 +26,7 @@ package "Service Layer" {
   [SFTPClient] as SFTP_CLI
   [KeyVerifier] as KEY_VER
   [CryptoService] as CRYPTO
+  [LocalFileSystem] as LOCAL_FS
 }
 
 package "External" {
@@ -31,6 +34,7 @@ package "External" {
   [russh-sftp] as RUSSH_SFTP
   [wezterm-term] as TERM
   [Windows DPAPI] as DPAPI
+  [rfd] as RFD
   [tray-icon] as TRAY — TODO
 }
 
@@ -41,10 +45,22 @@ SIDEBAR --> WORKSPACE : render + context menu
 DIALOG --> WORKSPACE : + button trigger → save
 TAB_BAR --> APP_STATE : read state
 
+' FileManagerView components
+FILE_VIEW --> WORKSPACE : render in content area (SessionKind::SFTP)
+FILE_VIEW --> FILE_BROWSER : uses (local + remote panels)
+FILE_VIEW --> FM_STATE : reads/writes
+TERM_VIEW --> WORKSPACE : render in content area (SessionKind::Terminal)
+
+' File browser -> data sources
+FILE_BROWSER --> LOCAL_FS : local panel (std::fs)
+FILE_BROWSER --> SFTP_CLI : remote panel (russh-sftp)
+FILE_BROWSER --> RFD : file dialogs (upload/download)
+
 ' State → Service
 APP_STATE --> SSH_SVC : cx.spawn() →
 APP_STATE --> SFTP_CLI : cx.spawn() →
 APP_STATE --> CRYPTO : encrypt/decrypt
+FM_STATE --> APP_STATE : part of AppState or separate Entity
 
 ' Service → External
 SSH_SVC --> RUSSH : russh::client
@@ -59,12 +75,15 @@ SFTP_CLI --> APP_STATE : message queue →
 note right of SIDEBAR : R004 (TabBar & Sidebar) + R010 (右键菜单)
 note right of DIALOG : R010 (新建连接对话框)
 note right of WORKSPACE : R010 (主工作区视图)
-note right of TERM_VIEW : R002 (Terminal) — TODO
-note right of FILE_VIEW : R003 (SFTP) — TODO
+note right of TERM_VIEW : R002 (Terminal)
+note right of FILE_VIEW : R003 (SFTP FileManager)\n双面板: 远程+本地，表格视图
+note right of FILE_BROWSER : R003 (通用文件浏览器组件)\nPathBar + TableView + Selection
 note right of SETTINGS : R005 (Config) — TODO
 note right of THEME_SEL : R006 (Theme) — TODO
 note right of SSH_SVC : R001 (SSH), R008 (Security)
 note right of CRYPTO : R008 (Crypto)
 note right of TITLE_BAR : R009 (Window)
+note right of LOCAL_FS : R003 (本地面板数据源)\ntokio::fs 异步文件 I/O
+note right of RFD : R003 (文件对话框)\nupload/download 触发
 
 @enduml
